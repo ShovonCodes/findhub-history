@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools>=69"]
+requires = ["setuptools>=77"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -7,6 +7,8 @@ name = "findhub-history"
 version = "0.1.0"
 description = "Keeps a history of Google Find Hub device locations and shows it on a private map"
 requires-python = ">=3.10"
+license = "GPL-3.0-only AND MIT"
+license-files = ["findhub/google/LICENSE", "findhub/google/NOTICE.md"]
 authors = [{ name = "Shovon" }]
 dependencies = [
     "fastapi>=0.115",
