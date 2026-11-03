@@ -1,0 +1,17 @@
+[Unit]
+Description=Find Hub History web app
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+User=findhub-history
+Environment=FINDHUB_DB=/var/lib/findhub-history/findhub-history.db
+Environment=FINDHUB_WEB_DIST=/opt/findhub-history/web/dist
+ExecStart=/opt/findhub-history/server/.venv/bin/uvicorn findhub.web:app --host 127.0.0.1 --port 8400
+Restart=on-failure
+NoNewPrivileges=yes
+ProtectSystem=strict
+ReadWritePaths=/var/lib/findhub-history
+
+[Install]
+WantedBy=multi-user.target

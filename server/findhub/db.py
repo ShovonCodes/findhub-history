@@ -4,7 +4,7 @@ from pathlib import Path
 
 from findhub.models import Device, Location
 
-DB_PATH = Path(os.environ.get("FINDHUB_DB", "/var/lib/findhub/findhub.db"))
+DB_PATH = Path(os.environ.get("FINDHUB_DB", "/var/lib/findhub-history/findhub-history.db"))
 
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS devices (

@@ -1,0 +1,15 @@
+[Unit]
+Description=Fetch Find Hub locations
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=findhub-history
+Environment=FINDHUB_DB=/var/lib/findhub-history/findhub-history.db
+Environment=FINDHUB_CREDENTIALS=/var/lib/findhub-history/credentials.json
+ExecStart=/opt/findhub-history/server/.venv/bin/python -m findhub.poll
+TimeoutStartSec=5min
+NoNewPrivileges=yes
+ProtectSystem=strict
+ReadWritePaths=/var/lib/findhub-history

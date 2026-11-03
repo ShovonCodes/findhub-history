@@ -19,7 +19,9 @@ from findhub.google.credentials import CredentialStore
 from findhub.google.errors import AuthRequiredError
 from findhub.models import Device, Location
 
-CREDENTIALS_PATH = Path(os.environ.get("FINDHUB_CREDENTIALS", "/var/lib/findhub/credentials.json"))
+CREDENTIALS_PATH = Path(
+    os.environ.get("FINDHUB_CREDENTIALS", "/var/lib/findhub-history/credentials.json")
+)
 LOCATION_TIMEOUT_SECONDS = 60
 
 logger = logging.getLogger("findhub.poll")

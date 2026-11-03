@@ -24,7 +24,7 @@ from findhub.google.credentials import (
 from findhub.google.push import PushListener
 from findhub.login import browser
 
-DEFAULT_CREDENTIALS_PATH = Path("findhub-credentials.json")
+DEFAULT_CREDENTIALS_PATH = Path("findhub-history-credentials.json")
 LOCATION_TIMEOUT_SECONDS = 60
 
 

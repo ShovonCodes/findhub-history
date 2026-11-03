@@ -3,10 +3,11 @@ requires = ["setuptools>=69"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "findhub"
+name = "findhub-history"
 version = "0.1.0"
-description = "Polls Google Find Hub for tracker locations and serves them on a private map"
+description = "Keeps a history of Google Find Hub device locations and shows it on a private map"
 requires-python = ">=3.10"
+authors = [{ name = "Shovon" }]
 dependencies = [
     "fastapi>=0.115",
     "uvicorn>=0.30",
@@ -19,6 +20,10 @@ dependencies = [
     "aiohttp>=3.11",
     "http_ece>=1.1",
 ]
+
+[project.urls]
+Homepage = "https://github.com/ShovonCodes/findhub-history"
+Issues = "https://github.com/ShovonCodes/findhub-history/issues"
 
 [project.optional-dependencies]
 login = [

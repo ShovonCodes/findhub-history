@@ -60,7 +60,7 @@ export default function App() {
     <div className="app">
       <aside className="panel">
         <header className="panel-header">
-          <h1>Find Hub</h1>
+          <h1>Find Hub History</h1>
           {devices ? <p className="subtitle">{plural(devices.length, 'device')}</p> : null}
         </header>
 
