@@ -20,6 +20,11 @@ export interface Device {
   position: PositionedLocation | null
 }
 
+export interface PollSchedule {
+  last: { ran_at: number; succeeded: boolean } | null
+  interval: number | null
+}
+
 async function getJson<T>(path: string): Promise<T> {
   const response = await fetch(path)
   if (!response.ok) {
@@ -30,6 +35,10 @@ async function getJson<T>(path: string): Promise<T> {
 
 export function fetchDevices(): Promise<Device[]> {
   return getJson('/api/devices')
+}
+
+export function fetchPollSchedule(): Promise<PollSchedule> {
+  return getJson('/api/polls')
 }
 
 export async function fetchTrail(deviceId: string, since: number): Promise<PositionedLocation[]> {

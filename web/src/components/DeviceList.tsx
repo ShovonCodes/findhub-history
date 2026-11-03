@@ -23,7 +23,10 @@ export function DeviceList({ devices, selectedId, now, onSelect }: DeviceListPro
             aria-pressed={device.id === selectedId}
             onClick={() => onSelect(device.id)}
           >
-            <span className="device-dot" style={{ background: trackerColor(index) }} />
+            <span
+              className="device-dot"
+              style={{ background: trackerColor(index), color: trackerColor(index) }}
+            />
             <span className="device-text">
               <span className="device-name">{device.name || 'Unnamed device'}</span>
               <span className="device-detail">{describe(device, now)}</span>
