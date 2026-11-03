@@ -15,7 +15,7 @@ interface TrackerMapProps {
   devices: Device[]
   selectedId: string | null
   trail: PositionedLocation[]
-  fitKey: string
+  fitKey: string | null
   onSelect: (deviceId: string) => void
 }
 
@@ -34,7 +34,10 @@ export function TrackerMap({ devices, selectedId, trail, fitKey, onSelect }: Tra
         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
         maxZoom={19}
       />
-      <FitToPoints points={fitPoints} fitKey={`${fitKey}|${fitPoints.length > 0}`} />
+      <FitToPoints
+        points={fitPoints}
+        fitKey={fitKey === null ? null : `${fitKey}|${fitPoints.length > 0}`}
+      />
 
       {selected?.position?.accuracy ? (
         <Circle
@@ -101,7 +104,7 @@ export function TrackerMap({ devices, selectedId, trail, fitKey, onSelect }: Tra
   )
 }
 
-function FitToPoints({ points, fitKey }: { points: LatLngTuple[]; fitKey: string }) {
+function FitToPoints({ points, fitKey }: { points: LatLngTuple[]; fitKey: string | null }) {
   const map = useMap()
 
   const fit = useEffectEvent(() => {
@@ -109,8 +112,10 @@ function FitToPoints({ points, fitKey }: { points: LatLngTuple[]; fitKey: string
     map.fitBounds(latLngBounds(points), { padding: FIT_PADDING, maxZoom: MAX_FIT_ZOOM })
   })
 
-  // Refit when the selection or range changes, not on every data refresh.
-  useEffect(() => fit(), [fitKey])
+  // Refit once per selection or range, after its trail loads, not on every data refresh.
+  useEffect(() => {
+    if (fitKey !== null) fit()
+  }, [fitKey])
 
   return null
 }

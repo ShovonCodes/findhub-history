@@ -10,6 +10,7 @@ const REFRESH_MS = 60_000
 
 interface Trail {
   key: string
+  selectionKey: string
   points: PositionedLocation[]
 }
 
@@ -37,20 +38,21 @@ export default function App() {
   }, [])
 
   const selected = devices?.find((device) => device.id === selectedId) ?? null
-  const trailKey = `${selectedId}|${range}|${selected?.position?.reported_at}`
+  const selectionKey = `${selectedId}|${range}`
+  const trailKey = `${selectionKey}|${selected?.position?.reported_at}`
 
   useEffect(() => {
     if (!selectedId) return
     let cancelled = false
     const since = nowInSeconds() - RANGES.find((option) => option.id === range)!.seconds
     fetchTrail(selectedId, since).then(
-      (points) => !cancelled && setTrail({ key: trailKey, points }),
+      (points) => !cancelled && setTrail({ key: trailKey, selectionKey, points }),
       (caught: Error) => !cancelled && setError(caught.message),
     )
     return () => {
       cancelled = true
     }
-  }, [selectedId, range, trailKey])
+  }, [selectedId, range, selectionKey, trailKey])
 
   const trailPoints = selected && trail?.key === trailKey ? trail.points : []
   const toggleSelection = (deviceId: string) =>
@@ -93,7 +95,7 @@ export default function App() {
           devices={devices ?? []}
           selectedId={selectedId}
           trail={trailPoints}
-          fitKey={`${selectedId}|${range}`}
+          fitKey={selectedId === null || trail?.selectionKey === selectionKey ? selectionKey : null}
           onSelect={toggleSelection}
         />
       </main>
