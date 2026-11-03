@@ -42,6 +42,13 @@ def test_one_failing_device_does_not_stop_the_others(database):
     assert poll(database, source) is False
 
     assert len(db.trail(database, KEYS.id, since=0)) == 1
+    assert db.poll_schedule(database)["last"]["succeeded"] is False
+
+
+def test_records_each_run(database):
+    poll(database, FakeSource({PHONE.id: [], KEYS.id: []}))
+
+    assert db.poll_schedule(database)["last"]["succeeded"] is True
 
 
 def test_login_problems_stop_the_poll(database):
@@ -49,3 +56,5 @@ def test_login_problems_stop_the_poll(database):
 
     with pytest.raises(AuthRequiredError):
         poll(database, source)
+
+    assert db.poll_schedule(database)["last"]["succeeded"] is False

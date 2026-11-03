@@ -35,4 +35,10 @@ def locations(device_id: str, since: int | None = None) -> list[dict]:
         )
 
 
+@app.get("/api/polls")
+def polls() -> dict:
+    with closing(db.connect()) as database:
+        return db.poll_schedule(database)
+
+
 app.mount("/", StaticFiles(directory=WEB_DIST, html=True, check_dir=False), name="web")

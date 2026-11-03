@@ -46,3 +46,24 @@ def test_trail_returns_positions_since_oldest_first(database):
     )
 
     assert [point["reported_at"] for point in db.trail(database, KEYS.id, since=150)] == [200, 300]
+
+
+def test_poll_schedule_is_empty_before_the_first_poll(database):
+    assert db.poll_schedule(database) == {"last": None, "interval": None}
+
+
+def test_poll_schedule_learns_the_interval_from_recent_polls(database):
+    runs = [(0, True), (900, True), (1795, True), (1900, True), (2700, True), (3600, False)]
+    for ran_at, succeeded in runs:
+        db.record_poll(database, ran_at, succeeded)
+
+    assert db.poll_schedule(database) == {
+        "last": {"ran_at": 3600, "succeeded": False},
+        "interval": 900,
+    }
+
+
+def test_poll_schedule_needs_two_polls_for_an_interval(database):
+    db.record_poll(database, 100, True)
+
+    assert db.poll_schedule(database)["interval"] is None

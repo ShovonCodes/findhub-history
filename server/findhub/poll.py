@@ -9,6 +9,7 @@ import logging
 import os
 import sqlite3
 import sys
+import time
 from contextlib import closing
 from pathlib import Path
 from typing import Protocol
@@ -34,7 +35,18 @@ class DeviceSource(Protocol):
 
 
 def poll(database: sqlite3.Connection, source: DeviceSource) -> bool:
-    """Store new locations for every device. Returns False if any device failed."""
+    """Store new locations for every device and record the run. Returns False if any failed."""
+    ran_at = int(time.time())
+    try:
+        succeeded = store_new_locations(database, source)
+    except Exception:
+        db.record_poll(database, ran_at, succeeded=False)
+        raise
+    db.record_poll(database, ran_at, succeeded)
+    return succeeded
+
+
+def store_new_locations(database: sqlite3.Connection, source: DeviceSource) -> bool:
     all_succeeded = True
     for device in source.list_devices():
         try:

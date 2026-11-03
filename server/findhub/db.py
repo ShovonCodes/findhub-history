@@ -1,5 +1,7 @@
 import os
 import sqlite3
+import statistics
+from itertools import pairwise
 from pathlib import Path
 
 from findhub.models import Device, Location
@@ -22,10 +24,15 @@ CREATE TABLE IF NOT EXISTS locations (
     is_own_report INTEGER,
     PRIMARY KEY (device_id, reported_at)
 );
+CREATE TABLE IF NOT EXISTS polls (
+    ran_at INTEGER PRIMARY KEY,
+    succeeded INTEGER NOT NULL
+);
 """
 LOCATION_COLUMNS = (
     "reported_at, latitude, longitude, altitude, accuracy, semantic_name, is_own_report"
 )
+RECENT_POLLS = 7
 
 
 def connect(path: Path | None = None) -> sqlite3.Connection:
@@ -88,6 +95,31 @@ def trail(db: sqlite3.Connection, device_id: str, since: int) -> list[dict]:
         (device_id, since),
     ).fetchall()
     return [dict(row) for row in rows]
+
+
+def record_poll(db: sqlite3.Connection, ran_at: int, succeeded: bool) -> None:
+    with db:
+        db.execute(
+            "INSERT OR REPLACE INTO polls (ran_at, succeeded) VALUES (?, ?)", (ran_at, succeeded)
+        )
+
+
+def poll_schedule(db: sqlite3.Connection) -> dict:
+    """The latest poll, and the usual time between polls learned from the recent ones."""
+    recent = db.execute(
+        "SELECT ran_at, succeeded FROM polls ORDER BY ran_at DESC LIMIT ?", (RECENT_POLLS,)
+    ).fetchall()
+    if not recent:
+        return {"last": None, "interval": None}
+    gaps = [newer["ran_at"] - older["ran_at"] for newer, older in pairwise(recent)]
+    return {
+        "last": {"ran_at": recent[0]["ran_at"], "succeeded": bool(recent[0]["succeeded"])},
+        "interval": _whole_minutes(statistics.median(gaps)) if gaps else None,
+    }
+
+
+def _whole_minutes(seconds: float) -> int | None:
+    return round(seconds / 60) * 60 or None
 
 
 def _latest(db: sqlite3.Connection, device_id: str, condition: str) -> dict | None:
