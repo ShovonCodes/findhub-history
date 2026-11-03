@@ -66,7 +66,7 @@ def semantic_report(name: str) -> common_pb2.LocationReport:
 
 def test_decrypts_every_report_type():
     update = device_update(
-        recent=own_report(23.8103, 90.4125),
+        recent=own_report(48.8584, 2.2945),
         network=[crowdsourced_report(), semantic_report("Home")],
     )
 
@@ -75,8 +75,8 @@ def test_decrypts_every_report_type():
     assert locations == [
         Location(
             reported_at=1000,
-            latitude=23.8103,
-            longitude=90.4125,
+            latitude=48.8584,
+            longitude=2.2945,
             altitude=12,
             accuracy=30,
             is_own_report=False,
@@ -84,8 +84,8 @@ def test_decrypts_every_report_type():
         Location(reported_at=1001, semantic_name="Home"),
         Location(
             reported_at=2000,
-            latitude=23.8103,
-            longitude=90.4125,
+            latitude=48.8584,
+            longitude=2.2945,
             altitude=5,
             accuracy=8.5,
             is_own_report=True,
