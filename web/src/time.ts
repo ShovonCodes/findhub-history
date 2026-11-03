@@ -1,0 +1,23 @@
+const MINUTE = 60
+const HOUR = 60 * MINUTE
+const DAY = 24 * HOUR
+
+export function nowInSeconds(): number {
+  return Math.floor(Date.now() / 1000)
+}
+
+export function timeAgo(timestamp: number, now: number): string {
+  const elapsed = Math.max(0, now - timestamp)
+  if (elapsed < MINUTE) return 'just now'
+  if (elapsed < HOUR) return `${Math.floor(elapsed / MINUTE)} min ago`
+  if (elapsed < DAY) return `${Math.floor(elapsed / HOUR)} h ago`
+  const days = Math.floor(elapsed / DAY)
+  return days === 1 ? 'yesterday' : `${days} days ago`
+}
+
+export function formatDateTime(timestamp: number): string {
+  return new Date(timestamp * 1000).toLocaleString(undefined, {
+    dateStyle: 'medium',
+    timeStyle: 'short',
+  })
+}

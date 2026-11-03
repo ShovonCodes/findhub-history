@@ -1,0 +1,51 @@
+[build-system]
+requires = ["setuptools>=69"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "findhub"
+version = "0.1.0"
+description = "Polls Google Find Hub for tracker locations and serves them on a private map"
+requires-python = ">=3.10"
+dependencies = [
+    "fastapi>=0.115",
+    "uvicorn>=0.30",
+    "gpsoauth>=1.1.1",
+    "requests>=2.32",
+    "protobuf>=6.31.1,<7",
+    "cryptography>=43",
+    "pycryptodomex>=3.21",
+    "ecdsa>=0.19",
+    "aiohttp>=3.11",
+    "http_ece>=1.1",
+]
+
+[project.optional-dependencies]
+login = [
+    "selenium>=4.27",
+    "undetected-chromedriver>=3.5.5",
+    "httpx[http2]>=0.28",
+    "setuptools>=75",
+]
+dev = [
+    "pytest>=8",
+    "httpx2>=2",
+    "ruff>=0.6",
+]
+
+[tool.setuptools.packages.find]
+include = ["findhub*"]
+
+[tool.setuptools.package-data]
+"findhub.google" = ["LICENSE", "NOTICE.md"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+extend-exclude = ["findhub/google/fcm", "findhub/google/proto"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "SIM"]
