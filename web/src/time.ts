@@ -16,12 +16,24 @@ export function timeAgo(timestamp: number, now: number): string {
 }
 
 export function formatTimeOfDay(timestamp: number, now: number): string {
+  const day = formatDay(timestamp, now)
+  const time = formatClockTime(timestamp)
+  return day ? `${day} ${time}` : time
+}
+
+export function formatClockTime(timestamp: number): string {
+  return new Date(timestamp * 1000).toLocaleTimeString(undefined, {
+    hour: '2-digit',
+    minute: '2-digit',
+  })
+}
+
+export function formatDay(timestamp: number, now: number): string | null {
   const date = new Date(timestamp * 1000)
-  const time = date.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })
-  if (date.toDateString() === new Date(now * 1000).toDateString()) return time
+  if (date.toDateString() === new Date(now * 1000).toDateString()) return null
   const dateOptions: Intl.DateTimeFormatOptions =
     now - timestamp < 6 * DAY ? { weekday: 'short' } : { day: 'numeric', month: 'short' }
-  return `${date.toLocaleDateString(undefined, dateOptions)} ${time}`
+  return date.toLocaleDateString(undefined, dateOptions)
 }
 
 export function formatDateTime(timestamp: number): string {

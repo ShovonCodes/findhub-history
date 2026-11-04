@@ -17,11 +17,12 @@ interface TimeStripProps {
   span: Span
   readings: number[]
   window: TimeWindow | null
+  playhead: number | null
   now: number
   onChange: (window: TimeWindow | null) => void
 }
 
-export function TimeStrip({ span, readings, window, now, onChange }: TimeStripProps) {
+export function TimeStrip({ span, readings, window, playhead, now, onChange }: TimeStripProps) {
   const trackRef = useRef<HTMLDivElement>(null)
   const drag = useRef<Drag | null>(null)
   const [draft, setDraft] = useState<TimeWindow | null>(null)
@@ -123,6 +124,9 @@ export function TimeStrip({ span, readings, window, now, onChange }: TimeStripPr
             style={{ left: offset(time) }}
           />
         ))}
+        {playhead === null ? null : (
+          <span className="time-strip-playhead" style={{ left: offset(playhead) }} />
+        )}
         {handle('from', 'Start of selected time')}
         {handle('to', 'End of selected time')}
       </div>

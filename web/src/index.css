@@ -391,6 +391,18 @@ h2 {
   background: rgb(var(--cyan) / 0.25);
 }
 
+.time-strip-playhead {
+  position: absolute;
+  top: 4px;
+  bottom: 4px;
+  width: 2px;
+  margin-left: -1px;
+  border-radius: 1px;
+  background: #ffffff;
+  box-shadow: 0 0 8px rgb(var(--cyan) / 0.9);
+  pointer-events: none;
+}
+
 .time-strip-handle {
   position: absolute;
   top: 0;
@@ -463,6 +475,112 @@ h2 {
   background: rgb(var(--cyan) / 0.16);
 }
 
+.replay-bar {
+  position: absolute;
+  left: 50%;
+  bottom: 28px;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: min(460px, calc(100% - 24px));
+  padding: 6px;
+  transform: translateX(-50%);
+  background: rgb(8 20 40 / 0.9);
+  border: 1px solid var(--card-border);
+  border-radius: 16px;
+  box-shadow: var(--glow);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.replay-play,
+.replay-stop {
+  display: grid;
+  place-items: center;
+  flex: none;
+  border: 0;
+  border-radius: 12px;
+  cursor: pointer;
+}
+
+.replay-play {
+  width: var(--tap);
+  height: var(--tap);
+  background: var(--accent);
+  color: var(--page);
+  box-shadow: 0 0 18px -4px rgb(var(--cyan) / 0.8);
+}
+
+.replay-stop {
+  width: 38px;
+  height: 38px;
+  background: var(--inset);
+  color: var(--muted);
+}
+
+.replay-stop:hover {
+  color: var(--text);
+  background: var(--hover);
+}
+
+.replay-play svg,
+.replay-stop svg {
+  width: 16px;
+  height: 16px;
+  fill: currentColor;
+}
+
+.replay-status {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+  line-height: 1.25;
+  white-space: nowrap;
+}
+
+.replay-time {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.replay-count {
+  color: var(--muted);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+
+.replay-speeds {
+  display: flex;
+  flex: none;
+  padding: 3px;
+  background: var(--inset);
+  border-radius: 11px;
+}
+
+.replay-speeds button {
+  min-width: 36px;
+  height: 32px;
+  padding: 0 4px;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  background: transparent;
+  border: 0;
+  border-radius: 8px;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.replay-speeds button[aria-checked='true'] {
+  background: rgb(var(--cyan) / 0.1);
+  color: var(--accent);
+  font-weight: 600;
+  box-shadow: inset 0 0 0 1px rgb(var(--cyan) / 0.4);
+}
+
 .stay-points {
   margin: 0 0 4px 15px;
   padding-left: 6px;
@@ -518,6 +636,17 @@ h2 {
   border-top-color: rgb(var(--cyan) / 0.3);
 }
 
+.leaflet-tooltip.replay-label {
+  color: var(--page);
+  background: #ffffff;
+  border-color: #ffffff;
+  font-variant-numeric: tabular-nums;
+}
+
+.leaflet-tooltip-top.replay-label::before {
+  border-top-color: #ffffff;
+}
+
 @media (max-width: 720px) {
   .app {
     grid-template-columns: 1fr;
@@ -529,6 +658,22 @@ h2 {
     border-bottom: 1px solid rgb(var(--cyan) / 0.25);
     box-shadow: 0 8px 24px -12px rgb(var(--cyan) / 0.5);
     z-index: 1;
+  }
+
+  .replay-bar {
+    gap: 8px;
+    bottom: 26px;
+    width: calc(100% - 16px);
+  }
+
+  .replay-play {
+    width: 40px;
+    height: 40px;
+  }
+
+  .replay-speeds button {
+    min-width: 30px;
+    padding: 0 2px;
   }
 
   .panel {

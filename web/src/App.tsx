@@ -10,10 +10,12 @@ import {
 import { DeviceList } from './components/DeviceList'
 import { PollStatusLine } from './components/PollStatusLine'
 import { RangePicker } from './components/RangePicker'
+import { ReplayBar } from './components/ReplayBar'
 import { TimeStrip } from './components/TimeStrip'
 import { type Focus, Timeline } from './components/Timeline'
 import { TrackerMap } from './components/TrackerMap'
 import { type RangeId, rangeSeconds } from './ranges'
+import { REPLAY_STEP_MS, type Replay, type ReplaySpeed, startReplay, stepReplay } from './replay'
 import { groupIntoStays } from './stays'
 import { nowInSeconds } from './time'
 import { type TimeWindow, withinWindow } from './timeWindow'
@@ -21,7 +23,6 @@ import { type TimeWindow, withinWindow } from './timeWindow'
 const REFRESH_MS = 60_000
 
 interface Trail {
-  key: string
   selectionKey: string
   points: PositionedLocation[]
 }
@@ -36,6 +37,8 @@ export default function App() {
   const [trail, setTrail] = useState<Trail | null>(null)
   const [focus, setFocus] = useState<Focus | null>(null)
   const [timeWindow, setTimeWindow] = useState<TimeWindow | null>(null)
+  const [replay, setReplay] = useState<Replay | null>(null)
+  const [speed, setSpeed] = useState<ReplaySpeed>(1)
 
   useEffect(() => {
     const load = () =>
@@ -62,7 +65,7 @@ export default function App() {
     let cancelled = false
     const since = nowInSeconds() - rangeSeconds(range)
     fetchTrail(selectedId, since).then(
-      (points) => !cancelled && setTrail({ key: trailKey, selectionKey, points }),
+      (points) => !cancelled && setTrail({ selectionKey, points }),
       (caught: Error) => !cancelled && setError(caught.message),
     )
     return () => {
@@ -70,26 +73,65 @@ export default function App() {
     }
   }, [selectedId, range, selectionKey, trailKey])
 
-  const trailPoints = selected && trail?.key === trailKey ? trail.points : null
+  const trailPoints = selected && trail?.selectionKey === selectionKey ? trail.points : null
   const windowPoints = useMemo(
     () => withinWindow(trailPoints ?? [], timeWindow),
     [trailPoints, timeWindow],
   )
+  const readings = useMemo(
+    () => windowPoints.map((point) => point.reported_at).sort((a, b) => a - b),
+    [windowPoints],
+  )
   const stays = useMemo(() => groupIntoStays(windowPoints), [windowPoints])
+  const replayedStays = useMemo(
+    () =>
+      replay
+        ? groupIntoStays(windowPoints.filter((point) => point.reported_at <= replay.at))
+        : stays,
+    [replay, windowPoints, stays],
+  )
+  const replayPoint = replay
+    ? (windowPoints.find((point) => point.reported_at === replay.at) ?? null)
+    : null
+  const timelineFocus = useMemo<Focus | null>(
+    () => (replay ? { kind: 'point', at: replay.at } : focus),
+    [replay, focus],
+  )
 
+  useEffect(() => {
+    if (!replay?.playing) return
+    const timer = setTimeout(
+      () => setReplay((current) => current && stepReplay(readings, current)),
+      REPLAY_STEP_MS / speed,
+    )
+    return () => clearTimeout(timer)
+  }, [replay, readings, speed])
+
+  const resetView = () => {
+    setFocus(null)
+    setReplay(null)
+  }
   const toggleSelection = (deviceId: string) => {
     setSelectedId((current) => (current === deviceId ? null : deviceId))
     setTimeWindow(null)
-    setFocus(null)
+    resetView()
   }
   const changeRange = (next: RangeId) => {
     setRange(next)
     setTimeWindow(null)
-    setFocus(null)
+    resetView()
   }
   const changeWindow = (next: TimeWindow | null) => {
     setTimeWindow(next)
+    resetView()
+  }
+  const focusOn = (next: Focus) => {
+    setReplay(null)
+    setFocus(next)
+  }
+  const play = () => {
     setFocus(null)
+    setReplay((current) => startReplay(readings, current))
   }
 
   return (
@@ -134,10 +176,11 @@ export default function App() {
                   span={{ start: now - rangeSeconds(range), end: now }}
                   readings={trailPoints.map((point) => point.reported_at)}
                   window={timeWindow}
+                  playhead={replay?.at ?? null}
                   now={now}
                   onChange={changeWindow}
                 />
-                <Timeline stays={stays} focus={focus} now={now} onFocus={setFocus} />
+                <Timeline stays={stays} focus={timelineFocus} now={now} onFocus={focusOn} />
               </>
             ) : null}
           </section>
@@ -148,16 +191,30 @@ export default function App() {
         <TrackerMap
           devices={devices ?? []}
           selectedId={selectedId}
-          stays={stays}
-          focus={focus}
+          stays={replayedStays}
+          focus={replay ? null : focus}
+          replayPoint={replayPoint}
+          now={now}
           fitKey={
             selectedId === null || trail?.selectionKey === selectionKey
               ? `${selectionKey}|${timeWindow?.from}|${timeWindow?.to}`
               : null
           }
           onSelect={toggleSelection}
-          onFocus={setFocus}
+          onFocus={focusOn}
         />
+        {selected && readings.length > 0 ? (
+          <ReplayBar
+            replay={replay}
+            readings={readings}
+            speed={speed}
+            now={now}
+            onPlay={play}
+            onPause={() => setReplay((current) => current && { ...current, playing: false })}
+            onStop={() => setReplay(null)}
+            onSpeedChange={setSpeed}
+          />
+        ) : null}
       </main>
     </div>
   )

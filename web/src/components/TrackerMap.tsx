@@ -1,18 +1,19 @@
-import { latLng, latLngBounds, type LatLngTuple } from 'leaflet'
+import { type FitBoundsOptions, latLng, latLngBounds, type LatLngTuple } from 'leaflet'
 import 'leaflet/dist/leaflet.css'
-import { useEffect, useEffectEvent } from 'react'
+import { type ReactNode, useEffect, useEffectEvent } from 'react'
 import { Circle, CircleMarker, MapContainer, Polyline, TileLayer, Tooltip, useMap } from 'react-leaflet'
-import type { Device } from '../api'
+import type { Device, PositionedLocation } from '../api'
 import { trackerColor } from '../colors'
 import type { Coordinates, Stay } from '../stays'
-import { formatDateTime } from '../time'
+import { formatDateTime, formatTimeOfDay } from '../time'
 import type { Focus } from './Timeline'
 
 const WORLD_CENTER: LatLngTuple = [20, 0]
 const WORLD_ZOOM = 2
 const MAX_FIT_ZOOM = 16
 const MAX_FOCUS_ZOOM = 18
-const FIT_PADDING: [number, number] = [48, 48]
+const EDGE_PADDING: [number, number] = [48, 48]
+const REPLAY_BAR_CLEARANCE: [number, number] = [48, 120]
 const FOCUSED_COLOR = '#ffffff'
 const FOCUSED_FILL = '#67e8f9'
 
@@ -21,10 +22,14 @@ interface TrackerMapProps {
   selectedId: string | null
   stays: Stay[]
   focus: Focus | null
+  replayPoint: PositionedLocation | null
+  now: number
   fitKey: string | null
   onSelect: (deviceId: string) => void
   onFocus: (focus: Focus) => void
 }
+
+type Padding = Required<Pick<FitBoundsOptions, 'paddingTopLeft' | 'paddingBottomRight'>>
 
 interface Spot {
   center: Coordinates
@@ -36,6 +41,8 @@ export function TrackerMap({
   selectedId,
   stays,
   focus,
+  replayPoint,
+  now,
   fitKey,
   onSelect,
   onFocus,
@@ -55,8 +62,14 @@ export function TrackerMap({
       ? stays.flatMap((stay) => stay.points).find((point) => point.reported_at === focus.at)
       : undefined
   const focusedSpot: Spot | null = focusedStay ?? (focusedPoint ? toSpot(focusedPoint) : null)
+  const padding: Padding = {
+    paddingTopLeft: EDGE_PADDING,
+    paddingBottomRight: selected ? REPLAY_BAR_CLEARANCE : EDGE_PADDING,
+  }
   const currentStay =
-    selected?.position && stays[0]?.endedAt === selected.position.reported_at ? stays[0] : null
+    selected?.position && !replayPoint && stays[0]?.endedAt === selected.position.reported_at
+      ? stays[0]
+      : null
 
   return (
     <MapContainer className="map" center={WORLD_CENTER} zoom={WORLD_ZOOM} zoomControl={false}>
@@ -66,10 +79,15 @@ export function TrackerMap({
         maxZoom={19}
       />
       <FitToPoints
+        padding={padding}
         points={fitPoints}
         fitKey={fitKey === null ? null : `${fitKey}|${fitPoints.length > 0}`}
       />
-      <FlyToSpot spot={focusedSpot} focusKey={focus ? `${focus.kind}|${focus.at}` : null} />
+      <FlyToSpot
+        spot={focusedSpot}
+        focusKey={focus ? `${focus.kind}|${focus.at}` : null}
+        padding={padding}
+      />
 
       {selected && stays.length > 1 ? (
         <Polyline
@@ -104,8 +122,18 @@ export function TrackerMap({
 
       {focusedSpot ? <FocusedSpot key={focus?.at} spot={focusedSpot} /> : null}
 
+      {replayPoint ? (
+        <FocusedSpot key={replayPoint.reported_at} spot={toSpot(replayPoint)}>
+          <Tooltip direction="top" offset={[0, -8]} permanent className="device-label replay-label">
+            {formatTimeOfDay(replayPoint.reported_at, now)}
+          </Tooltip>
+        </FocusedSpot>
+      ) : null}
+      <KeepInView point={replayPoint} padding={padding} />
+
       {markerOrder(devices, selectedId).map(({ device, index }) => {
         const isSelected = device.id === selectedId
+        if (isSelected && replayPoint) return null
         const onClick = () =>
           isSelected ? currentStay && onFocus(focusOn(currentStay)) : onSelect(device.id)
         return device.position ? (
@@ -172,7 +200,7 @@ function StayMarker({ stay, color, showCenter, onFocus }: StayMarkerProps) {
   )
 }
 
-function FocusedSpot({ spot }: { spot: Spot }) {
+function FocusedSpot({ spot, children }: { spot: Spot; children?: ReactNode }) {
   return (
     <>
       {spot.accuracy ? (
@@ -194,17 +222,25 @@ function FocusedSpot({ spot }: { spot: Spot }) {
         radius={7}
         interactive={false}
         pathOptions={{ color: '#050a18', weight: 3, fillColor: FOCUSED_COLOR, fillOpacity: 1 }}
-      />
+      >
+        {children}
+      </CircleMarker>
     </>
   )
 }
 
-function FitToPoints({ points, fitKey }: { points: LatLngTuple[]; fitKey: string | null }) {
+interface FitToPointsProps {
+  points: LatLngTuple[]
+  fitKey: string | null
+  padding: Padding
+}
+
+function FitToPoints({ points, fitKey, padding }: FitToPointsProps) {
   const map = useMap()
 
   const fit = useEffectEvent(() => {
     if (points.length === 0) return
-    map.fitBounds(latLngBounds(points), { padding: FIT_PADDING, maxZoom: MAX_FIT_ZOOM })
+    map.fitBounds(latLngBounds(points), { ...padding, maxZoom: MAX_FIT_ZOOM })
   })
 
   // Refit once per selection or range, after its trail loads, not on every data refresh.
@@ -215,18 +251,36 @@ function FitToPoints({ points, fitKey }: { points: LatLngTuple[]; fitKey: string
   return null
 }
 
-function FlyToSpot({ spot, focusKey }: { spot: Spot | null; focusKey: string | null }) {
+interface FlyToSpotProps {
+  spot: Spot | null
+  focusKey: string | null
+  padding: Padding
+}
+
+function FlyToSpot({ spot, focusKey, padding }: FlyToSpotProps) {
   const map = useMap()
 
   const fly = useEffectEvent(() => {
     if (!spot) return
     const bounds = latLng(toLatLng(spot.center)).toBounds(2 * (spot.accuracy ?? 50))
-    map.flyToBounds(bounds, { padding: FIT_PADDING, maxZoom: MAX_FOCUS_ZOOM, duration: 0.6 })
+    map.flyToBounds(bounds, { ...padding, maxZoom: MAX_FOCUS_ZOOM, duration: 0.6 })
   })
 
   useEffect(() => {
     if (focusKey !== null) fly()
   }, [focusKey])
+
+  return null
+}
+
+function KeepInView({ point, padding }: { point: Coordinates | null; padding: Padding }) {
+  const map = useMap()
+
+  const pan = useEffectEvent(() => {
+    if (point) map.panInside(toLatLng(point), padding)
+  })
+
+  useEffect(() => pan(), [point])
 
   return null
 }
