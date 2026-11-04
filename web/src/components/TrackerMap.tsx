@@ -44,7 +44,9 @@ export function TrackerMap({
   const selected = selectedIndex >= 0 ? devices[selectedIndex] : null
   const color = trackerColor(selectedIndex)
   const fitPoints = selected?.position
-    ? [...stays.map((stay) => toLatLng(stay.center)), toLatLng(selected.position)]
+    ? stays.length > 0
+      ? stays.map((stay) => toLatLng(stay.center))
+      : [toLatLng(selected.position)]
     : devices.flatMap((device) => (device.position ? [toLatLng(device.position)] : []))
   const focusedStay =
     focus?.kind === 'stay' ? stays.find((stay) => stay.startedAt === focus.at) : undefined
