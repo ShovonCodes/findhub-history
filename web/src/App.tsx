@@ -12,7 +12,7 @@ import { PollStatusLine } from './components/PollStatusLine'
 import { RangePicker } from './components/RangePicker'
 import { type Focus, Timeline } from './components/Timeline'
 import { TrackerMap } from './components/TrackerMap'
-import { RANGES, type RangeId } from './ranges'
+import { type RangeId, rangeSeconds } from './ranges'
 import { groupIntoStays } from './stays'
 import { nowInSeconds } from './time'
 
@@ -57,7 +57,7 @@ export default function App() {
   useEffect(() => {
     if (!selectedId) return
     let cancelled = false
-    const since = nowInSeconds() - RANGES.find((option) => option.id === range)!.seconds
+    const since = nowInSeconds() - rangeSeconds(range)
     fetchTrail(selectedId, since).then(
       (points) => !cancelled && setTrail({ key: trailKey, selectionKey, points }),
       (caught: Error) => !cancelled && setError(caught.message),

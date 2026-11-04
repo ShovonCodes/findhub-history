@@ -13,6 +13,8 @@ export function RangePicker({ value, onChange }: RangePickerProps) {
           key={range.id}
           role="radio"
           aria-checked={range.id === value}
+          aria-label={range.name}
+          title={range.name}
           onClick={() => onChange(range.id)}
         >
           {range.label}
